@@ -39,8 +39,14 @@ case "$1" in
         # broken out into pluginhook so we might support other methods to receive an app
         pluginhook receive-app $APP $newrev
       else
-        echo $'\e[1G\e[K'"-----> WARNING: deploy did not complete, you must push to master."
-        echo $'\e[1G\e[K'"-----> for example, try 'git push <dokku> ${refname/refs\/heads\/}:master'"
+        APP=${refname/*\//}.$APP
+        if [[ ! -d "$DOKKU_ROOT/$APP" ]]; then
+          REFERENCE_REPO="$DOKKU_ROOT/${APP/*./}"
+          git clone --bare --shared --reference "$REFERENCE_REPO" "$REFERENCE_REPO" "$DOKKU_ROOT/$APP" > /dev/null
+
+          echo $newrev > "$DOKKU_ROOT/$APP/refs/heads/master"
+        fi
+        pluginhook receive-app $APP $newrev
       fi
     done
     ;;
